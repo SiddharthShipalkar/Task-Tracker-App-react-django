@@ -20,5 +20,5 @@ from django.urls import path,include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('chaining/', include('smart_selects.urls')),  # required for dependent dropdowns
-
+    path('api/v1/', include('api.urls')),
 ]

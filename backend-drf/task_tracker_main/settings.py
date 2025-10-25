@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'simple_history',  
     'smart_selects',
     'task_management',
+    'rest_framework',
+    'api',
 ]
 
 MIDDLEWARE = [
