@@ -24,6 +24,7 @@ const Login = () => {
       const response = await axios.post('http://127.0.0.1:8000/api/v1/token/', userData)
       localStorage.setItem('accessToken', response.data.access)
       localStorage.setItem('refreshToken', response.data.refresh)
+      
       console.log('Login successful');
       setIsLoggedIn(true)
       navigate('/dashboard')
@@ -41,14 +42,14 @@ const Login = () => {
     <div className='container'>
         <div className="row justify-content-center">
             <div className="col-md-6 bg-light-dark p-5 rounded">
-                <h3 className=' text-center mb-4'>Login to our Dashboard</h3>
+                <h3 className=' text-center mb-4'>Login to Tracker Dashboard</h3>
                 <form onSubmit={handleLogin}>
                   <div className='mb-3'>
                     <input type="text" className='form-control' placeholder='Username' value={username} onChange={(e) => setUsername(e.target.value)} />
                   </div>
                     
                     <div className='mb-3'>
-                    <input type="password" className='form-control ' placeholder='Set password' value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <input type="password" className='form-control ' placeholder='password' value={password} onChange={(e) => setPassword(e.target.value)} />
                     </div>
                     
                     {error && <div className='text-danger'>{error}</div> }

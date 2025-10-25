@@ -8,7 +8,7 @@ const Main = () => {
       <div className='p-5 text-center bg-light-dark'>
         <h1>Task Tracker App</h1>
         <p className='lead'>info related to App</p>
-        <Button text="Login" class="btn btn-outline-info" url='/login'/> 
+        <Button text="Explore Now" class="btn btn-outline-info" url='/dashboard'/> 
       </div>
 
     </div>
