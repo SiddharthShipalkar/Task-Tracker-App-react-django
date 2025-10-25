@@ -37,6 +37,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'accounts',
+    'organization_structure',
+    'simple_history',  
+    'smart_selects',
+    'task_management',
 ]
 
 MIDDLEWARE = [
@@ -47,6 +52,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware',  # ✅ add this
+
 ]
 
 ROOT_URLCONF = 'task_tracker_main.urls'
@@ -67,6 +74,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'task_tracker_main.wsgi.application'
+AUTH_USER_MODEL='accounts.Account'
 
 
 # Database
