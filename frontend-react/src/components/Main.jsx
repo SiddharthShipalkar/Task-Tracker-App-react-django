@@ -3,17 +3,15 @@ import Button from './Button'
 
 const Main = () => {
   return (
-    <>
-    <div className='container'>
-      <div className='p-5 text-center bg-light-dark'>
-        <h1>Task Tracker App</h1>
-        <p className='lead'>info related to App</p>
-        <Button text="Explore Now" class="btn btn-outline-info" url='/dashboard'/> 
+    <section className="d-flex align-items-center justify-content-center text-center bg-light" style={{ minHeight: '85vh' }}>
+      <div className="bg-white p-5 shadow-sm rounded-4">
+        <h1 className="fw-bold mb-3">Tracker App</h1>
+        <p className="lead text-muted mb-4">
+          Your centralized workspace for project tracking, team coordination, and performance insights.
+        </p>
+        <Button text="Explore Now" class="btn-outline-info" url="/dashboard" />
       </div>
-
-    </div>
-    </>
-
+    </section>
   )
 }
 

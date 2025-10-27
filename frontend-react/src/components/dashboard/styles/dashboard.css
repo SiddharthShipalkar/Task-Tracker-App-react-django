@@ -1,0 +1,205 @@
+.dashboard {
+  background-color: #f8f9fb;
+  min-height: 84vh;
+  font-size: 0.95rem;
+}
+
+/* Section borders and layout cleanup */
+.rmsc .dropdown-heading {
+  height: None !important;
+}
+.border-end {
+  border-right: 1px solid #dee2e6 !important;
+}
+
+.bg-primary {
+  background-color: #0078d7 !important; /* modern blue */
+}
+
+/* Keep sections compact and aligned */
+h6 {
+  font-weight: 600;
+}
+
+.quick-filters select,
+.quick-filters input {
+  border-radius: 0.1rem;
+}
+
+/* Smooth hover on tracker items */
+.tracker-item:hover {
+  background-color: #f5f7fa;
+  transition: all 0.2s ease-in;
+}
+
+/* Quick Filters layout improvements */
+.quick-filters {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Align label and dropdown nicely */
+.quick-filters label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #555;
+}
+
+/* Enhance the MultiSelect box */
+.quick-filters .rmsc {
+  --rmsc-main: #0d6efd;
+  --rmsc-hover: #e9f5ff;
+  --rmsc-border: #dee2e6;
+  --rmsc-radius: 0.12rem;
+  width: 100%;
+  min-height: 2rem;
+}
+
+.quick-filters .rmsc .dropdown-container {
+  border: 1px solid #ced4da;
+  border-radius: 0.12rem;
+  padding:0.12rem 0.1rem;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  
+}
+
+.quick-filters .rmsc .dropdown-container:hover {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+/* 🔹 Quick Filters Layout */
+.quick-filters {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* 🔹 Each filter (label + dropdown pair) */
+.filter-item {
+  display: flex;
+  align-items: center;
+}
+
+/* 🔹 Dropdown container */
+.filter-dropdown {
+  width: 100%;
+}
+
+/* 🔹 Style the native select dropdown */
+.filter-dropdown select,
+.filter-dropdown .rmsc .dropdown-container {
+  border: 1px solid #ced4da;
+  border-radius: 0.12rem;
+  padding: 0.12rem 0.1rem;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  width: 9rem;
+}
+
+.filter-dropdown select:hover,
+.filter-dropdown .rmsc .dropdown-container:hover {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+/* 🔹 Adjust spacing for smaller screens */
+@media (max-width: 768px) {
+  .filter-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+}
+
+/* 🔹 Consistent width for all date pickers */
+.quick-filters .react-datepicker-wrapper {
+  width: 180px !important;
+}
+
+.quick-filters .react-datepicker__input-container input {
+  width: 100%;
+  min-width: 180px;
+  height: 38px;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  border: 1px solid #ced4da;
+  padding: 6px 10px;
+  transition: all 0.2s ease;
+}
+
+/* 🔹 Smooth hover/focus states for consistency */
+.quick-filters .react-datepicker__input-container input:hover,
+.quick-filters .react-datepicker__input-container input:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+  outline: none;
+}
+
+/* 🔹 Align both date pickers properly in range mode */
+.quick-filters .filter-item .d-flex.align-items-center.gap-2 {
+  gap: 10px;
+}
+
+.quick-filters .filter-item .fw-semibold {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+/* 🔹 Reduce Quick Filters width and input sizes */
+.quick-filters {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.quick-filters .filter-dropdown select,
+.quick-filters .react-datepicker__input-container input {
+  height: 36px;
+  font-size: 0.9rem;
+  padding: 4px 8px;
+}
+
+/* 🔹 Control widths of dropdowns */
+.quick-filters select,
+.quick-filters input,
+.quick-filters .rmsc {
+  max-width: 160px !important;
+}
+
+/* 🔹 Keep spacing between filters compact */
+.quick-filters .filter-item {
+  gap: 8px;
+}
+
+/* 🔹 Keep Add Task aligned nicely */
+.btn-success {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* modal helpers */
+.modal-backdrop-custom {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal-dialog.modal-centered {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 16px;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
