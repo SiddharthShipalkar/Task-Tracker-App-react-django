@@ -8,6 +8,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import JSONParser
+from organization_structure.models import Team
+from task_management.models import TaskCategory,SubTask,Task
+from datetime import timedelta, datetime
 
 
 # Create your views here.
@@ -26,50 +29,124 @@ class ProtectedView(APIView):
             'status': 'request was permitted'
         }
         return Response(response)
-    
+
+class UserProfileView(APIView):
+    permission_classes=[IsAuthenticated]
+    def get(self,request):
+        user=request.user
+        return Response({
+            "name":user.username,
+            "email":user.email,
+            "role":user.role,
+            "location":user.location,
+            "emp_id": user.emp_id,
+        })
+       
 class TreeDataView(APIView):
+    permission_classes=[IsAuthenticated]
     def get(self, request):
-        tree_data = [
-            {
-                "id": 1,
-                "name": "Project Alpha",
-                "type": "project",
-                "status": "active",
-                "children": [
-                    {
-                        "id": 11,
-                        "name": "Frontend Team",
-                        "type": "department",
-                        "status": "active",
-                        "children": [
-                            {"id": 111, "name": "UI Devs", "type": "team", "status": "active"},
-                            {"id": 112, "name": "UX Designers", "type": "team", "status": "active"},
-                        ],
-                    },
-                    {
-                        "id": 12,
-                        "name": "Backend Team",
-                        "type": "department",
-                        "status": "active",
-                        "children": [
-                            {"id": 121, "name": "API Devs", "type": "team", "status": "active"},
-                            {"id": 122, "name": "Database", "type": "team", "status": "active"},
-                        ],
-                    },
-                ],
-            },
-            {
-                "id": 2,
-                "name": "Project Beta",
-                "type": "project",
-                "status": "inactive",
-                "children": [
-                    {"id": 21, "name": "Testing", "type": "department", "status": "active"},
-                    {"id": 22, "name": "Deployment", "type": "department", "status": "active"},
-                ],
-            },
-        ]
+        user=request.user
+        print(user.role)
+        if not user.is_authenticated:
+            return Response({"detail":"Unauthorized"},status=status.HTTP_401_UNAUTHORIZED)
+        
+        tree_data=[]
+        if user.role =="Associate":
+            tree_data=self.create_tree_data_for_associate(user)
+        elif user.role =="Lead":
+            tree_data=self.create_tree_data_for_lead(user)
+        elif user.role =="Manager":
+            tree_data=self.create_tree_data_for_Manager(user)
+        else:
+            return Response({"detail":"Unknown ROle"},status=status.HTTP_400_BAD_REQUEST)
+
+        
         return Response(tree_data, status=status.HTTP_200_OK)
+    def create_tree_data_for_associate(self,user):
+        if not user.project or not user.department or not user.team:
+            return []
+        return [
+            {
+                "id": user.project.project_id,
+                "name": user.project.project_name,
+                "type": "project",
+                "status": getattr(user.project,"status","inactive"),
+                "children": [
+                    {
+                        "id": user.department.department_id,
+                        "name": user.department.department_name,
+                        "type": "department",
+                        "status": getattr(user.department,"status","inactive"),
+                        "children": [
+                                {"id": user.team.team_id,
+                                "name": user.team.team_name,
+                                    "type": "team", 
+                                    "status": getattr(user.team,"status","active"),
+                                }
+                                
+                        ]
+                    }
+                ]
+            }
+        ]
+    def create_tree_data_for_lead(self,user):
+        if not user.project :
+            return []
+        print(user.role)
+        return [
+            {
+                "id": user.project.project_id,
+                "name": user.project.project_name,
+                "type": "project",
+                "status": getattr(user.project,"status","inactive"),
+                "children": [
+                    {
+                        "id": user.department.department_id,
+                        "name": user.department.department_name,
+                        "type": "department",
+                        "status": getattr(user.department,"status","inactive"),
+                        "children": [
+                                {"id": user.team.team_id,
+                                "name": user.team.team_name,
+                                    "type": "team", 
+                                    "status": getattr(user.team,"status","active"),
+                                }
+                                
+                        ]
+                    }
+                ]
+            }
+        ]
+        
+    def create_tree_data_for_Manager(self,user):
+        if not user.project or not user.department or not user.team:
+            return []
+        print(user.role)
+        return [
+            {
+                "id": user.project.project_id,
+                "name": user.project.project_name,
+                "type": "project",
+                "status": getattr(user.project,"status","active"),
+                "children": [
+                    {
+                        "id": user.department.department_id,
+                        "name": user.department.department_name,
+                        "type": "department",
+                        "status": getattr(user.department,"status","active"),
+                        "children": [
+                                {"id": user.team.team_id,
+                                "name": user.team.team_name,
+                                    "type": "team", 
+                                    "status": getattr(user.team,"status","active"),
+                                }
+                                
+                        ]
+                    }
+                ]
+            }
+        ]
+        
 
 # --------------------------
 # 2️⃣ FILTERED TRACKERS API
@@ -113,20 +190,142 @@ class FilteredTrackersView(APIView):
 # --------------------------
 # 3️⃣ ADD TASK API
 # --------------------------
-class AddTaskView(APIView):
-    def post(self, request):
-        task_name = request.data.get("name")
-        task_description = request.data.get("description", "")
+class TeamListView(APIView):
+    permission_classes = [IsAuthenticated]
 
-        print(f"✅ New Task Added: {task_name} - {task_description}")
+    def get(self, request):
+        emp_id = request.query_params.get("emp_id")
+        if not emp_id:
+            return Response({"error": "emp_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Dummy response for now
-        return Response(
-            {"message": f"Task '{task_name}' added successfully."},
-            status=status.HTTP_201_CREATED
-        )
+        try:
+            user = Account.objects.get(emp_id=emp_id)
+            department = user.department
+            if not department:
+                return Response({"error": "No department assigned for this user"}, status=404)
+
+            teams = Team.objects.filter(department=department, is_active=True)
+            data = [{"id": t.team_id, "name": t.team_name} for t in teams]
+            return Response(data, status=200)
+
+        except Account.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
+
+class TaskCategoryListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        team_id = request.query_params.get("team_id")
+        if not team_id:
+            return Response({"error": "team_id is required"}, status=400)
+
+        categories = TaskCategory.objects.filter(team_id=team_id, is_active=True)
+        data = [{"id": c.task_category_id, "name": c.task_category_name} for c in categories]
+        return Response(data, status=200)
+
+class SubTaskListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        task_category_id = request.query_params.get("task_category_id")
+        if not task_category_id:
+            return Response({"error": "task_category_id is required"}, status=400)
+
+        subtasks = SubTask.objects.filter(task_category_id=task_category_id, is_active=True)
+        data = [{"id": s.subtask_id, "name": s.subtask_name} for s in subtasks]
+        return Response(data, status=200)
+
+class UserListForAssignmentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        roles = ["Associate", "Lead"]
+        users = Account.objects.filter(role__in=roles, is_active=True)
+        data = [
+            {"id": u.emp_id, "name": u.username, "role": u.role, "email": u.email}
+            for u in users
+        ]
+        return Response(data)
     
+class TaskCreateView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def post(self, request):
+        user = request.user
+        data = request.data
+        print("InAdd task")
+        try:
+            # 🔹 Fetch required related objects
+            team = Team.objects.get(pk=data["team_id"])
+            category = TaskCategory.objects.get(pk=data["task_category_id"])
+            subtask = (
+                SubTask.objects.get(pk=data["subtask_id"])
+                if data.get("subtask_id")
+                else None
+            )
+
+            # 🔹 Parse subtask count
+            subtask_count = int(data.get("subtask_count", 1))
+
+            # 🔹 Convert "HH:MM:SS" → timedelta
+            estimated_efforts_str = data.get("task_estimated_efforts", "00:00:00")
+            try:
+                h, m, s = map(int, estimated_efforts_str.split(":"))
+                task_estimated_efforts = timedelta(hours=h, minutes=m, seconds=s)
+            except Exception:
+                task_estimated_efforts = timedelta(0)
+
+            # 🔹 Auto-calculate expected efforts from subtask
+            task_expected_efforts = None
+            if subtask and subtask.subtask_expected_efforts:
+                try:
+                    task_expected_efforts = (
+                        subtask.subtask_expected_efforts * subtask_count
+                    )
+                except Exception:
+                    task_expected_efforts = timedelta(0)
+            print("fields ready")
+            # 🔹 Create new task
+            task = Task.objects.create(
+                task_name=data["task_name"],
+                task_description=data.get("description", ""),
+                team=team,
+                task_category=category,
+                subtask=subtask,
+                subtask_count=subtask_count,
+                task_estimated_efforts=task_estimated_efforts,
+                task_expected_efforts=task_expected_efforts,
+                task_status="NEW",
+                task_priority=data.get("priority", "LOW").upper(),
+                assigned_by=user,
+            )
+
+            # 🔹 Handle multiple assigned users
+            assigned_ids = data.get("assigned_to", [])
+            if assigned_ids:
+                assigned_users = Account.objects.filter(emp_id__in=assigned_ids)
+                task.assigned_to.set(assigned_users)
+            else:
+                task.assigned_to.set([user])  # fallback
+
+            task.save()
+            print("task Saved Sucessfully")
+            return Response(
+                {
+                    "message": "✅ Task created successfully",
+                    "task_id": task.task_id,
+                    "expected_efforts": str(task.task_expected_efforts),
+                    "estimated_efforts": str(task.task_estimated_efforts),
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        except Exception as e:
+            print("❌ Task creation failed:", e)
+            return Response(
+                {"error": f"Task creation failed: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 # --------------------------
 # 4️⃣ TRACKER CARD DATA API
 # --------------------------

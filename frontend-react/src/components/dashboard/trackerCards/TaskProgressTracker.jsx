@@ -55,7 +55,7 @@ const TaskProgressTracker = () => {
   return (
     <Card
       title={<h5 className="fw-bold text-primary mb-0">{trackerData.trackerType}</h5>}
-      bordered
+      variant="bordered"
       className="mb-4 shadow-sm"
     >
       <div className="d-flex flex-wrap align-items-center justify-content-between gap-4">

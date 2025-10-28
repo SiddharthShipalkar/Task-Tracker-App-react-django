@@ -1,0 +1,8 @@
+Add Task Popup saved successfully msg shown 
+assigned to multiple users -> how to handle task completion and calculation and timings 
+tracker cards and property panel for tasks and associate for task (multiple assignee and status update things handle ) and after save deviation status handle and average of task deviation we have to give devaitioon status of associate by cheking very time 
+
+
+child team under one team handle in data base and UI 
+allow selected tree node selection according to tree node 
+notifications , 

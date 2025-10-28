@@ -15,6 +15,20 @@ const Dashboard = () => {
   const [selectedNode, setSelectedNode] = useState(null);
   const [trackerData, setTrackerData] = useState([]);
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [user, setUser] = useState(null); // 👈 Add this to hold user data
+
+  // ✅ Load user profile
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await axiosInstance.get("/user-profile/");
+        setUser(res.data);
+      } catch (err) {
+        console.error("Error fetching user profile:", err);
+      }
+    };
+    fetchUser();
+  }, []);
 
   // ✅ Load protected data once
   useEffect(() => {
@@ -89,16 +103,19 @@ const Dashboard = () => {
       {/* 🔹 Quick Filters + Add Task */}
       <div className="bg-white border rounded p-3 mb-3 d-flex align-items-center justify-content-between gap-3 flex-wrap">
         <div className="flex-grow-1 me-3" style={{ minWidth: "60%" }}>
-          <QuickFilters onFilterChange={handleFilterChange} />
+          <QuickFilters onFilterChange={handleFilterChange} userRole={user?.role} />
         </div>
-        <div>
-          <button
-            className="btn btn-success px-4 fw-semibold"
-            onClick={() => setShowTaskModal(true)}
-          >
-            + Add Task
-          </button>
-        </div>
+        {/* 🔹 Conditionally render Add Task button */}
+        {user?.role !== "Manager" && (
+          <div>
+            <button
+              className="btn btn-success px-4 fw-semibold"
+              onClick={() => setShowTaskModal(true)}
+            >
+              + Add Task
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 🔹 Main Dashboard Area */}
@@ -106,7 +123,7 @@ const Dashboard = () => {
         {/* Left: Tree / Navigation */}
         <div className="col-12 col-md-2 border-end p-3">
           <h6 className="fw-semibold mb-3 text-secondary">Navigation</h6>
-          <TreeViewPanel data={treeData} onNodeSelect={handleNodeSelect} />
+          <TreeViewPanel data={treeData} onNodeSelect={handleNodeSelect} userRole={user?.role} />
         </div>
 
         {/* Middle: Trackers */}
@@ -127,6 +144,8 @@ const Dashboard = () => {
         show={showTaskModal}
         onClose={() => setShowTaskModal(false)}
         onTaskAdded={handleTaskAdded}
+        user={user}
+        
       />
     </div>
   );

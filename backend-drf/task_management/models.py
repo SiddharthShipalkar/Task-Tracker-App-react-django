@@ -133,8 +133,8 @@ class Task(models.Model):
     assigned_by = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tasks'
     )
-    assigned_to = models.ForeignKey(
-        Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='received_tasks'
+    assigned_to = models.ManyToManyField(
+        Account, null=True, blank=True, related_name='received_tasks'
     )
 
     # ===============================

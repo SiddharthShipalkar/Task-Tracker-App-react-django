@@ -1,5 +1,5 @@
 // src/components/dashboard/TreeViewPanel.jsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Tree } from "antd";
 import { FolderOutlined, ProjectOutlined, UsergroupAddOutlined } from "@ant-design/icons";
 
@@ -40,10 +40,56 @@ const mapToTreeData = (nodes) =>
     children: n.children ? mapToTreeData(n.children) : [],
   }));
 
-const TreeViewPanel = ({ data = [], onNodeSelect = () => {} }) => {
+const TreeViewPanel = ({ data = [],userRole = "", onNodeSelect = () => {} }) => {
+  const [expandedKeys, setExpandedKeys] = useState([]);
+  const [autoExpanded, setAutoExpanded] = useState(false); // 👈 ensures expand-all runs only once
+  const [selectedKeys, setSelectedKeys] = useState([]);
   const treeData = mapToTreeData(data);
+  // ✅ Expand all nodes when data is first loaded
+  useEffect(() => {
+    if (data.length > 0 && !autoExpanded) {
+      const collectKeys = (nodes) =>
+        nodes.reduce((acc, n) => {
+          acc.push(String(n.id));
+          if (n.children?.length) acc.push(...collectKeys(n.children));
+          return acc;
+        }, []);
+      const allKeys = collectKeys(data);
+      setExpandedKeys(allKeys);
+      setAutoExpanded(true);
+    }
+  }, [data, autoExpanded]);
+  // ✅ Automatically preselect node based on role
+  useEffect(() => {
+    if (!data.length) return;
+
+    const findNodeByType = (nodes, type) => {
+      for (const node of nodes) {
+        if (node.type === type && node.status !== "inactive") return node;
+        if (node.children?.length) {
+          const found = findNodeByType(node.children, type);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    let defaultNode = null;
+    if (userRole?.toLowerCase() === "manager") {
+      defaultNode = findNodeByType(data, "project");
+    } else {
+      defaultNode = findNodeByType(data, "team");
+    }
+
+    if (defaultNode) {
+      setSelectedKeys([String(defaultNode.id)]);
+      onNodeSelect(defaultNode);
+    }
+  }, [data, userRole, onNodeSelect]);
 
   const handleSelect = (selectedKeys, { node }) => {
+    if (node.disabled) return; // prevent selecting inactive nodes
+    setSelectedKeys(selectedKeys);
     // node.dataRef contains original object
     if (node && node.dataRef) onNodeSelect(node.dataRef);
   };
@@ -52,10 +98,12 @@ const TreeViewPanel = ({ data = [], onNodeSelect = () => {} }) => {
     <div className="treeview-panel">
       <Tree
         treeData={treeData}
-        defaultExpandAll={false}
         showIcon
-        onSelect={handleSelect}
+        expandedKeys={expandedKeys}
+        onExpand={(keys) => setExpandedKeys(keys)}
         selectable
+        onSelect={handleSelect}
+        selectedKeys={selectedKeys} // 👈 controlled selection
       />
     </div>
   );

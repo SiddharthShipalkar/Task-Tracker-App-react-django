@@ -1,24 +1,40 @@
 // src/components/dashboard/QuickFilters.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { MultiSelect } from "react-multi-select-component";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-const QuickFilters = ({ onFilterChange = () => {} }) => {
-  const trackerOptions = [
-    { label: "Task Progress", value: "task_progress" },
-    { label: "Task Deviation", value: "task_deviation" },
-    { label: "Associate Deviation", value: "associate_deviation" },
-  ];
+const ALL_TRACKERS = [
+  { label: "Task Progress", value: "task_progress" },
+  { label: "Task Deviation", value: "task_deviation" },
+  { label: "Associate Deviation", value: "associate_deviation" },
+];
+
+const QuickFilters = ({ onFilterChange = () => {}, userRole = null }) => {
+  // compute tracker options based on role
+  const trackerOptions = useMemo(() => {
+    if (userRole === "Associate") {
+      return ALL_TRACKERS.filter((t) => t.value === "task_progress");
+    }
+    if (userRole === "Lead") {
+      return ALL_TRACKERS.filter(
+        (t) => t.value ==="task_progress"||t.value === "task_deviation" || t.value === "associate_deviation"
+      );
+    }
+    // default: show all
+    return ALL_TRACKERS;
+  }, [userRole]);
 
   const [selectedTrackers, setSelectedTrackers] = useState([]);
   const [dateFilter, setDateFilter] = useState("Single Day");
   const [startDate, setStartDate] = useState(new Date()); // default today
   const [endDate, setEndDate] = useState(null);
 
+  // when trackerOptions change (role change or mount) set default selection:
   useEffect(() => {
-    setSelectedTrackers(trackerOptions); // default select all
-  }, []);
+    // default behaviour: select all visible options
+    setSelectedTrackers(trackerOptions);
+  }, [trackerOptions]);
 
   // notify parent when any filter piece changes
   useEffect(() => {
