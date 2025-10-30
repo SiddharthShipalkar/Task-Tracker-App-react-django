@@ -6,6 +6,7 @@ import TrackerList from "./TrackerList";
 import PropertyPanel from "./PropertyPanel";
 import TaskModal from "./TaskModal";
 import "./styles/dashboard.css";
+import { message } from "antd";
 
 import "antd/dist/reset.css"; // Ant Design v5 reset
 
@@ -13,9 +14,49 @@ const Dashboard = () => {
   const [treeData, setTreeData] = useState([]);
   const [filterData, setFilterData] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
-  const [trackerData, setTrackerData] = useState([]);
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [messageapi,contextHolder]=message.useMessage()
   const [user, setUser] = useState(null); // 👈 Add this to hold user data
+  const [selectedEntity, setSelectedEntity] = useState(null);
+  const [loadingEntity, setLoadingEntity] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+const handleTaskUpdated = (taskId) => {
+  console.log("Task updated:", taskId);
+  setRefreshKey((prev) => prev + 1); // triggers rerender of TrackerList
+};
+
+const handleRowSelect = async (entityType, entityId) => {
+  setLoadingEntity(true);
+  try {
+    let res = null;
+
+    // 🔹 Choose API dynamically based on entity type
+    switch (entityType) {
+      case "task":
+        res = await axiosInstance.get(`/tasks/${entityId}/`);
+        break;
+
+      case "associate":
+        res = await axiosInstance.get(`/associates/${entityId}/`);
+        break;
+      default:
+        console.warn(`Unknown entity type: ${entityType}`);
+        break;
+    }
+
+    if (res) {
+      setSelectedEntity({
+        type: entityType,
+        data: res.data,
+      });
+    }
+  } catch (err) {
+    console.error("Error fetching entity details:", err);
+  } finally {
+    setLoadingEntity(false);
+  }
+};
 
   // ✅ Load user profile
   useEffect(() => {
@@ -56,27 +97,7 @@ const Dashboard = () => {
     loadTree();
   }, []);
 
-  // ✅ Fetch trackers (stable function)
-  const fetchTrackers = useCallback(
-  async (filters = filterData, node = selectedNode) => {
-    try {
-      if (!filters) return;
-      const payload = { ...filters, selectedNode: node };
-      const res = await axiosInstance.post("/get-filtered-trackers/", payload);
-      setTrackerData(res.data);
-    } catch (err) {
-      console.error("Error fetching trackers:", err);
-      setTrackerData([]);
-    }
-  },
-  [filterData, selectedNode] // 👈 stable dependency
-);
 
-  // ✅ Refresh when filterData or selectedNode changes
-  useEffect(() => {
-  if (!filterData) return;
-  fetchTrackers();
-}, [filterData, selectedNode, fetchTrackers]);
 
 
   // ✅ Callbacks
@@ -95,10 +116,13 @@ const Dashboard = () => {
 
   const handleTaskAdded = async () => {
     setShowTaskModal(false);
-    await fetchTrackers(); // refresh after adding a task
+    messageapi.success(" Task Created Sucessfully!",2)
+    setRefreshKey((prev) => prev + 1);
   };
 
   return (
+    <>
+    {contextHolder}
     <div className="dashboard container-fluid px-4 mt-5 pt-4">
       {/* 🔹 Quick Filters + Add Task */}
       <div className="bg-white border rounded p-3 mb-3 d-flex align-items-center justify-content-between gap-3 flex-wrap">
@@ -129,13 +153,13 @@ const Dashboard = () => {
         {/* Middle: Trackers */}
         <div className="col-12 col-md-7 border-end p-3">
           <h6 className="fw-semibold mb-3 text-secondary">Trackers</h6>
-          <TrackerList trackers={trackerData} />
+          <TrackerList filters={filterData} selectedNode={selectedNode} onRowSelect={handleRowSelect} key={refreshKey} />
         </div>
 
         {/* Right: Property Panel */}
         <div className="col-12 col-md-3 p-3">
           <h6 className="fw-semibold mb-3 text-secondary">Property Panel</h6>
-          <PropertyPanel />
+          <PropertyPanel entity={selectedEntity} loading={loadingEntity} onTaskUpdated={handleTaskUpdated}/>
         </div>
       </div>
 
@@ -148,6 +172,7 @@ const Dashboard = () => {
         
       />
     </div>
+    </>
   );
 };
 

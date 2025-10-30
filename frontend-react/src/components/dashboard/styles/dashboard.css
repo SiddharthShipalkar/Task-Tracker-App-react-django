@@ -203,3 +203,97 @@ h6 {
   border-radius: 8px;
   box-shadow: 0 8px 30px rgba(0,0,0,0.12);
 }
+
+
+
+/* ✅ Responsive layout for TaskProgressTracker */
+.selected-row {
+  background-color: #f0f8ff !important;
+}
+
+button:hover {
+  filter: brightness(1.1);
+} 
+
+.task-tracker-container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-around;
+  gap: 1rem;
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+/* Sections */
+.task-chart-section {
+  flex: 0 0 35%;
+  height: 280px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-right: 1px solid #e0e0e0;
+  padding-right: 1rem;
+}
+
+.task-buttons-section {
+  flex: 0 0 20%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  border-right: 1px solid #e0e0e0;
+  padding: 0 0.8rem;
+}
+
+.task-table-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0 0.8rem;
+}
+
+/* ✅ Mobile responsiveness */
+@media (max-width: 992px) {
+  .task-tracker-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .task-chart-section,
+  .task-buttons-section,
+  .task-table-section {
+    flex: 1 1 100%;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 1rem 0;
+  }
+
+  .task-buttons-section {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .task-buttons-section button {
+    width: auto !important;
+    min-width: 120px;
+  }
+}
+
+@media (max-width: 600px) {
+  .task-chart-section {
+    height: 220px;
+  }
+
+  .task-buttons-section button {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .task-table-section input {
+    width: 100%;
+  }
+}

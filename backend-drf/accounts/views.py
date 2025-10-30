@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .serializers import AccountSerializer
+from .serializers import AccountSerializer,TaskProgressTrackerSerializer,TaskDetailSerializer
 from rest_framework import generics
 from .models import Account
 from rest_framework.permissions import AllowAny
@@ -8,9 +8,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import JSONParser
-from organization_structure.models import Team
+from organization_structure.models import Team,Project,Department
 from task_management.models import TaskCategory,SubTask,Task
 from datetime import timedelta, datetime
+from django.utils.dateparse import parse_datetime
+from rest_framework.generics import RetrieveUpdateAPIView
 
 
 # Create your views here.
@@ -151,42 +153,6 @@ class TreeDataView(APIView):
 # --------------------------
 # 2️⃣ FILTERED TRACKERS API
 # --------------------------
-class FilteredTrackersView(APIView):
-    def post(self, request):
-        print("🟢 /get-filtered-trackers endpoint hit!")
-        try:
-            # Safely read incoming filter data
-            selected_node = request.data.get("selectedNode") or {}
-            selected_trackers = request.data.get("selectedTrackers") or []
-            date_filter = request.data.get("dateFilter", "")
-            start_date = request.data.get("startDate")
-            end_date = request.data.get("endDate")
-
-            print("📥 Received Filters:")
-            print("selected_node:", selected_node)
-            print("selected_trackers:", selected_trackers)
-            print("date_filter:", date_filter)
-            print("start_date:", start_date)
-            print("end_date:", end_date)
-
-            # ✅ Dummy static trackers to send
-            dummy_trackers = [
-                {"id": 1, "name": "Homepage UI", "status": "In Progress", "priority": "High"},
-                {"id": 2, "name": "API Integration", "status": "Completed", "priority": "Medium"},
-                {"id": 3, "name": "Database Optimization", "status": "Pending", "priority": "Low"},
-            ]
-
-            # ✅ Optional filtering simulation
-            if date_filter == "Single Day":
-                dummy_trackers = dummy_trackers[:2]
-            elif date_filter == "Date Range":
-                dummy_trackers = dummy_trackers[1:]
-
-            return Response(dummy_trackers, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            print("❌ Error in FilteredTrackersView:", e)
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 # --------------------------
 # 3️⃣ ADD TASK API
 # --------------------------
@@ -329,34 +295,203 @@ class TaskCreateView(APIView):
 # --------------------------
 # 4️⃣ TRACKER CARD DATA API
 # --------------------------
-class TaskProgressTrackerView(APIView):
-    def get(self, request):
-        # Dummy counts
-        tracker_summary = {
-            "trackerType": "Task Progress",
-            "statusCounts": {
-                "New": 5,
-                "In Progress": 10,
-                "On Hold": 3,
-                "Fixed": 7,
-                "Total": 25
-            },
-            # Table data per status
-            "tasks": {
-                "New": [
-                    {"id": 1, "title": "Task 1", "owner": "Alice", "priority": "High"},
-                    {"id": 2, "title": "Task 2", "owner": "Bob", "priority": "Low"},
-                ],
-                "In Progress": [
-                    {"id": 3, "title": "Task 3", "owner": "Siddharth", "priority": "Medium"},
-                ],
-                "On Hold": [
-                    {"id": 4, "title": "Task 4", "owner": "John", "priority": "Low"},
-                ],
-                "Fixed": [
-                    {"id": 5, "title": "Task 5", "owner": "Mike", "priority": "High"},
-                ],
-            }
+def apply_date_filter(tasks,date_filter,start_date,end_date):
+        if date_filter =="Single Day" and start_date:
+            date=parse_datetime(start_date)
+            if date:
+                return tasks.filter(created_at__date=date.date())
+        elif date_filter=="Date Range" and start_date and end_date:
+            start=parse_datetime(start_date)
+            end=parse_datetime(end_date)
+            if start and end:
+                return tasks.filter(created_at__date__range=(start.date(),end.date())) 
+        elif date_filter =="Until Date" and start_date:
+            date=parse_datetime(start_date)
+            if date:
+                return tasks.filter(created_at__date__lte=date.date())
+        return None
+def get_all_active_teams_from_selected_node(node_type, node_id):
+    teams = []
+
+    if node_type == "project":
+        try:
+            project = Project.objects.get(project_id=node_id)
+            departments = Department.objects.filter(project=project)
+            for dept in departments:
+                dep_teams = get_all_active_teams_from_selected_node("department", dept.department_id)
+                teams.extend(dep_teams)
+        except Project.DoesNotExist:
+            pass
+
+    elif node_type == "department":
+        try:
+            department = Department.objects.get(department_id=node_id)
+            dep_teams = list(Team.objects.filter(department=department))
+            teams.extend(dep_teams)
+        except Department.DoesNotExist:
+            pass
+
+    elif node_type == "team":
+        try:
+            team = Team.objects.get(team_id=node_id)
+            teams.append(team)
+        except Team.DoesNotExist:
+            pass
+
+    return teams
+def build_task_progress_response(tasks, tracker_type, date_filter="", start_date=None, end_date=None):
+    status_group = {
+        "New": [],
+        "Assigned": [],
+        "In Progress": [],
+        "On Hold": [],
+        "Fixed": [],
+    }
+
+    # Apply date filter
+    filtered_tasks = apply_date_filter(tasks, date_filter, start_date, end_date)
+    if filtered_tasks is None or not filtered_tasks.exists():
+        status_counts = {k: 0 for k in status_group}
+        status_counts["Total"] = 0
+        return {
+            "trackerType": tracker_type,
+            "statusCounts": status_counts,
+            "tasks": status_group
         }
 
-        return Response(tracker_summary, status=status.HTTP_200_OK)
+    # Categorize tasks by status
+    for task in filtered_tasks:
+        task_status = task.task_status
+        serialized = TaskProgressTrackerSerializer(task).data
+        if task_status == "NEW":
+            status_group["New"].append(serialized)
+        elif task_status == "ASSIGNED":
+            status_group["Assigned"].append(serialized)
+        elif task_status == "IN_PROGRESS":
+            status_group["In Progress"].append(serialized)
+        elif task_status == "ON_HOLD":
+            status_group["On Hold"].append(serialized)
+        elif task_status == "FIXED":
+            status_group["Fixed"].append(serialized)
+
+    # Count totals
+    status_counts = {k: len(v) for k, v in status_group.items()}
+    status_counts["Total"] = sum(status_counts.values())
+
+    return {
+        "trackerType": tracker_type,
+        "statusCounts": status_counts,
+        "tasks": status_group
+    }
+
+class OverallTaskProgressTrackerView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            print("called")
+            filters = request.data
+            selected_node = filters.get("selectedNode", {})
+            date_filter = filters.get("dateFilter", "")
+            start_date = filters.get("startDate")
+            end_date = filters.get("endDate")
+
+            # No node selected
+            if not selected_node:
+                return Response(
+                    build_task_progress_response(Task.objects.none(), "Overall Task Progress"),
+                    status=status.HTTP_200_OK
+                )
+
+            node_type = selected_node.get("type", "")
+            node_id = selected_node.get("id", "")
+            node_status = selected_node.get("status")
+
+            # If inactive node
+            if node_status == "inactive":
+                return Response(
+                    build_task_progress_response(Task.objects.none(), "Overall Task Progress"),
+                    status=status.HTTP_200_OK
+                )
+
+            teams = get_all_active_teams_from_selected_node(node_type, node_id)
+            tasks = Task.objects.filter(team__in=teams)
+
+            response_data = build_task_progress_response(tasks, "Overall Task Progress", date_filter, start_date, end_date)
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print("Error in OverallTaskProgressTrackerView:", e)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)                 
+
+class SelfTaskProgressTrackerView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            print("called")
+            filters = request.data
+            user = request.user
+            date_filter = filters.get("dateFilter", "")
+            start_date = filters.get("startDate")
+            end_date = filters.get("endDate")
+
+            tasks = Task.objects.filter(assigned_to=user)
+
+            response_data = build_task_progress_response(tasks, "Self Task Progress", date_filter, start_date, end_date)
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print("Error in SelfTaskProgressTrackerView:", e)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    
+class TaskDetailView(RetrieveUpdateAPIView):
+    queryset = Task.objects.all()
+    serializer_class = TaskDetailSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk, *args, **kwargs):
+        """🔹 Get task details by ID"""
+        try:
+            task = self.get_object()
+            serializer = self.get_serializer(task)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Task.DoesNotExist:
+            return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request, pk, *args, **kwargs):
+        """🔹 Update task details"""
+        task = self.get_object()
+        serializer = self.get_serializer(task, data=request.data, partial=True)
+        if serializer.is_valid():
+            updated_task=serializer.save()
+            if updated_task.task_status=="FIXED" and updated_task.task_actual_efforts:
+                actual_efforts=updated_task.task_actual_efforts.total_seconds()
+                estimated_or_expected_efforts=None
+                if updated_task.task_expected_efforts==None:
+                    estimated_or_expected_efforts= updated_task.task_estimated_efforts.total_seconds()
+                else:
+                    estimated_or_expected_efforts=updated_task.task_expected_efforts.total_seconds()
+                self.calculate_deviation_category(estimated_or_expected_efforts,actual_efforts,updated_task)
+                updated_task.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def calculate_deviation_category(self,estimated_or_expected_efforts,actual_efforts,updated_task):
+        if estimated_or_expected_efforts>0:
+            deviation_percent=((actual_efforts - estimated_or_expected_efforts)/estimated_or_expected_efforts) *  100
+            if deviation_percent<=-20:
+                updated_task.task_deviation ="BEST_TRACK"
+            elif -20<deviation_percent<= -10:
+                updated_task.task_deviation ="GOOD_TRACK"
+            elif -10< deviation_percent <= 10:
+                updated_task.task_deviation ="ON_TRACK"
+            elif 10<deviation_percent<=25:
+                updated_task.task_deviation ="LOW_DEVIATION"
+            else:
+                updated_task.task_deviation ="HIGH_DEVIATION"
+
+
+

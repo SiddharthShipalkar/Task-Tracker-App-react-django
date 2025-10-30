@@ -220,7 +220,9 @@ const TaskModal = ({ show, onClose, onTaskAdded, user }) => {
             <Form.Item
               label="SubTask"
               name="subtask"
-              rules={[{ required: true, message: "Please select a subtask" }]}
+              rules={subtasks.length > 0
+                ? [{ required: true, message: "Please select a subtask" }]
+                : []}
             >
               <Select
                 placeholder="Select SubTask"
@@ -295,7 +297,23 @@ const TaskModal = ({ show, onClose, onTaskAdded, user }) => {
               label="Estimated Efforts (HH:MM:SS)"
               name="task_estimated_efforts"
               tooltip="Select estimated duration"
-              rules={[{ required: true, message: "Please select estimated efforts" }]}
+              rules={[
+                  {
+                    validator: (_, value) => {
+                      if (!value) {
+                        return Promise.reject("Please select estimated efforts");
+                      }
+
+                      // convert to string
+                      const timeString = value.format("HH:mm:ss");
+                      if (timeString === "00:00:00") {
+                        return Promise.reject("Estimated efforts cannot be 00:00:00");
+                      }
+
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
             >
               <TimePicker
                 format="HH:mm:ss"

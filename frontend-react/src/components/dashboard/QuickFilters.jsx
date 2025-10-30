@@ -5,7 +5,8 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 const ALL_TRACKERS = [
-  { label: "Task Progress", value: "task_progress" },
+  { label: "Self Task Progress", value: "self_task_progress" },
+  { label: "Overall Task Progress", value: "overall_task_progress" },
   { label: "Task Deviation", value: "task_deviation" },
   { label: "Associate Deviation", value: "associate_deviation" },
 ];
@@ -14,11 +15,11 @@ const QuickFilters = ({ onFilterChange = () => {}, userRole = null }) => {
   // compute tracker options based on role
   const trackerOptions = useMemo(() => {
     if (userRole === "Associate") {
-      return ALL_TRACKERS.filter((t) => t.value === "task_progress");
+      return ALL_TRACKERS.filter((t) => t.value === "self_task_progress");
     }
     if (userRole === "Lead") {
       return ALL_TRACKERS.filter(
-        (t) => t.value ==="task_progress"||t.value === "task_deviation" || t.value === "associate_deviation"
+        (t) =>t.value ==="overall_task_progress"|| t.value ==="self_task_progress"||t.value === "task_deviation" || t.value === "associate_deviation"
       );
     }
     // default: show all
@@ -52,8 +53,8 @@ const QuickFilters = ({ onFilterChange = () => {}, userRole = null }) => {
       setStartDate(new Date());
       setEndDate(null);
     } else {
-      setStartDate(null);
-      setEndDate(null);
+      setStartDate(new Date());
+      setEndDate(new Date());
     }
   }, [dateFilter]);
 

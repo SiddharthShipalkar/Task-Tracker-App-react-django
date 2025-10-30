@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Account
+from task_management.models import Task
 
 
 class AccountSerializer(serializers.ModelSerializer):
@@ -22,3 +23,27 @@ class AccountSerializer(serializers.ModelSerializer):
         password=validated_data.pop('password',None)
         user=Account.objects.create_user(**validated_data,password=password)# type: ignore
         return user
+
+# serializers.py
+
+
+class TaskProgressTrackerSerializer(serializers.ModelSerializer):
+    assigned_to = serializers.StringRelatedField(many=True)  # many=True since it's a ManyToManyField
+
+    class Meta:
+        model = Task
+        fields = ['task_id', 'task_name', 'task_priority', 'task_status', 'assigned_to']
+class TaskDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = [
+            "task_id",
+            "task_name",
+            "task_description",
+            "task_priority",
+            "task_status",
+            "created_at",
+            "updated_at",
+            "task_actual_efforts",
+        ]
+        read_only_fields = ["task_id", "created_at", "updated_at"]
