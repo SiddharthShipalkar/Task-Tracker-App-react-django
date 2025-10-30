@@ -47,3 +47,18 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             "task_actual_efforts",
         ]
         read_only_fields = ["task_id", "created_at", "updated_at"]
+
+class TaskDeviationTrackerSerializer(serializers.ModelSerializer):
+    task_deviation_display = serializers.CharField(source='get_task_deviation_display', read_only=True)
+    task_priority_display = serializers.CharField(source='get_task_priority_display', read_only=True)
+
+    class Meta:
+        model = Task
+        fields = [
+            "task_id",
+            "task_name",
+            "task_priority",
+            "task_priority_display",
+            "task_deviation",
+            "task_deviation_display",
+        ]

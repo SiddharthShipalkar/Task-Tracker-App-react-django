@@ -13,6 +13,7 @@ from task_management.models import TaskCategory,SubTask,Task
 from datetime import timedelta, datetime
 from django.utils.dateparse import parse_datetime
 from rest_framework.generics import RetrieveUpdateAPIView
+from .serializers import TaskDeviationTrackerSerializer
 
 
 # Create your views here.
@@ -48,7 +49,6 @@ class TreeDataView(APIView):
     permission_classes=[IsAuthenticated]
     def get(self, request):
         user=request.user
-        print(user.role)
         if not user.is_authenticated:
             return Response({"detail":"Unauthorized"},status=status.HTTP_401_UNAUTHORIZED)
         
@@ -389,7 +389,6 @@ class OverallTaskProgressTrackerView(APIView):
 
     def post(self, request):
         try:
-            print("called")
             filters = request.data
             selected_node = filters.get("selectedNode", {})
             date_filter = filters.get("dateFilter", "")
@@ -429,7 +428,6 @@ class SelfTaskProgressTrackerView(APIView):
 
     def post(self, request):
         try:
-            print("called")
             filters = request.data
             user = request.user
             date_filter = filters.get("dateFilter", "")
@@ -445,6 +443,106 @@ class SelfTaskProgressTrackerView(APIView):
             print("Error in SelfTaskProgressTrackerView:", e)
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+
+def build_task_deviation_response(tasks, tracker_type):
+    """
+    Builds response for Task Deviation Tracker
+    """
+
+    deviation_group = {
+        "Best Track": [],
+        "Good Track": [],
+        "On Track": [],
+        "Low Deviation": [],
+        "High Deviation": [],
+    }
+
+    # Handle no tasks case
+    if not tasks.exists():
+        status_counts = {k: 0 for k in deviation_group}
+        status_counts["Total"] = 0
+        return {
+            "trackerType": tracker_type,
+            "statusCounts": status_counts,
+            "columns": [
+                {"title": "Task ID", "dataIndex": "task_id"},
+                {"title": "Title", "dataIndex": "task_name"},
+                {"title": "Priority", "dataIndex": "task_priority_display"},
+                {"title": "Deviation", "dataIndex": "task_deviation_display"},
+            ],
+            "items": deviation_group
+        }
+
+    # Serialize all tasks at once
+    serialized_tasks = TaskDeviationTrackerSerializer(tasks, many=True).data
+
+    # Categorize by readable deviation name
+    for task in serialized_tasks:
+        deviation_value = task.get("task_deviation_display") or "On Track"
+
+        if deviation_value in deviation_group:
+            deviation_group[deviation_value].append(task)
+        else:
+            deviation_group["On Track"].append(task)
+
+    # Count totals
+    status_counts = {k: len(v) for k, v in deviation_group.items()}
+    status_counts["Total"] = sum(status_counts.values())
+
+    return {
+        "trackerType": tracker_type,
+        "statusCounts": status_counts,
+        "columns": [
+            {"title": "Task ID", "dataIndex": "task_id"},
+            {"title": "Title", "dataIndex": "task_name"},
+            {"title": "Priority", "dataIndex": "task_priority_display"},
+            {"title": "Deviation", "dataIndex": "task_deviation_display"},
+        ],
+        "items": deviation_group
+    }
+
+class TaskDeviationTrackerView(APIView):
+    permission_classes = [IsAuthenticated]
+   
+    def post(self, request):
+        try:
+            filters = request.data
+            selected_node = filters.get("selectedNode", {})
+            date_filter = filters.get("dateFilter", "")
+            start_date = filters.get("startDate")
+            end_date = filters.get("endDate")
+           
+            # No node selected
+            if not selected_node:
+                return Response(
+                    build_task_deviation_response(Task.objects.none(), "Task Deviation Tracker"),
+                    status=status.HTTP_200_OK
+                )
+
+            node_type = selected_node.get("type", "")
+            node_id = selected_node.get("id", "")
+            node_status = selected_node.get("status")
+
+            # If inactive node
+            if node_status == "inactive":
+                return Response(
+                    build_task_deviation_response(Task.objects.none(), "Task Deviation Tracker"),
+                    status=status.HTTP_200_OK
+                )
+
+            teams = get_all_active_teams_from_selected_node(node_type, node_id)
+            tasks = Task.objects.filter(team__in=teams)
+
+            # Apply date filter (reuse your existing helper if you want)
+            tasks = apply_date_filter(tasks, date_filter, start_date, end_date)
+
+            response_data = build_task_deviation_response(tasks, "Task Deviation Tracker")
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print("Error in TaskDeviationTrackerView:", e)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     
 class TaskDetailView(RetrieveUpdateAPIView):

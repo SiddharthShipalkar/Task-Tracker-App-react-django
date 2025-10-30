@@ -22,6 +22,11 @@ const QuickFilters = ({ onFilterChange = () => {}, userRole = null }) => {
         (t) =>t.value ==="overall_task_progress"|| t.value ==="self_task_progress"||t.value === "task_deviation" || t.value === "associate_deviation"
       );
     }
+    if (userRole === "Manager") {
+      return ALL_TRACKERS.filter(
+        (t) =>t.value ==="overall_task_progress"||t.value === "task_deviation" || t.value === "associate_deviation"
+      );
+    }
     // default: show all
     return ALL_TRACKERS;
   }, [userRole]);
@@ -59,7 +64,7 @@ const QuickFilters = ({ onFilterChange = () => {}, userRole = null }) => {
   }, [dateFilter]);
 
   return (
-    <div className="quick-filters bg-white p-3 rounded shadow-sm border w-100">
+    <div className="quick-filters bg-white p-2 rounded shadow-sm border w-100">
       <h6 className="fw-semibold text-primary">Quick Filters</h6>
 
       <div className="d-flex align-items-center flex-wrap gap-3">

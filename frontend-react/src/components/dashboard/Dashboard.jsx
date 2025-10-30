@@ -123,9 +123,9 @@ const handleRowSelect = async (entityType, entityId) => {
   return (
     <>
     {contextHolder}
-    <div className="dashboard container-fluid px-4 mt-5 pt-4">
+    <div className="dashboard container-fluid p-0 mt-3 pt-5">
       {/* 🔹 Quick Filters + Add Task */}
-      <div className="bg-white border rounded p-3 mb-3 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+      <div className="bg-white border rounded p-2 mb-2 d-flex align-items-center justify-content-between gap-3 flex-wrap">
         <div className="flex-grow-1 me-3" style={{ minWidth: "60%" }}>
           <QuickFilters onFilterChange={handleFilterChange} userRole={user?.role} />
         </div>

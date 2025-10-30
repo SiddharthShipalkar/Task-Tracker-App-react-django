@@ -1,8 +1,36 @@
 .dashboard {
   background-color: #f8f9fb;
-  min-height: 84vh;
   font-size: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  min-height: calc(100vh - 120px);
+  padding: 0; /* remove any internal padding */
 }
+
+/* === Tracker Section Scroll Control === */
+.dashboard .col-md-7 {
+  position: relative;
+  max-height: 68vh; /* 👈 sets tracker section height */
+  overflow-y: auto; /* only scrolls when data is more */
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  padding-right: 8px;
+}
+
+/* Optional scrollbar styling */
+.dashboard .col-md-7::-webkit-scrollbar {
+  width: 6px;
+}
+.dashboard .col-md-7::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+}
+.dashboard .col-md-7::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.45);
+}
+
 
 /* Section borders and layout cleanup */
 .rmsc .dropdown-heading {

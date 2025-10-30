@@ -16,7 +16,8 @@ urlpatterns=[
     path("accounts/", AccountViews.UserListForAssignmentView.as_view(), name="accounts-list"),
     path('self-task-progress-tracker/', AccountViews.SelfTaskProgressTrackerView.as_view(), name='self-task-progress-tracker'),
     path('overall-task-progress-tracker/', AccountViews.OverallTaskProgressTrackerView.as_view(), name='overall-task-progress-tracker'),
-
+    path('task-deviation-tracker/', AccountViews.TaskDeviationTrackerView.as_view(), name='task-deviation-tracker'),
     path("tasks/<int:pk>/", AccountViews.TaskDetailView.as_view(), name="task-detail"),
 
 ]
+
